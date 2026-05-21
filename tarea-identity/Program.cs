@@ -5,8 +5,6 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 // Add services to the container.
 builder.Services.AddRazorPages();
 
@@ -18,7 +16,7 @@ builder.Services.AddDbContext<MyIdentityDBContext>(options =>
 builder.Services.AddAuthentication().AddBearerToken(IdentityConstants.BearerScheme);
 builder.Services.AddAuthorizationBuilder();
 
-builder.Services.AddIdentity<MyUser, MyRole>(options => { 
+builder.Services.AddIdentity<MyUser, MyRole>(options => {
 
     //Password
     options.Password.RequireDigit = true;
@@ -34,22 +32,18 @@ builder.Services.AddIdentity<MyUser, MyRole>(options => {
     options.Lockout.AllowedForNewUsers = true;
     options.Lockout.MaxFailedAccessAttempts = 5;
 
-}
-    ).
-    AddDefaultTokenProviders()
-    .AddEntityFrameworkStores<MyIdentityDBContext>()
-        .AddApiEndpoints();
-
+})
+.AddDefaultTokenProviders()
+.AddEntityFrameworkStores<MyIdentityDBContext>()
+.AddApiEndpoints();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
 var app = builder.Build();
 
-
-
-
+// CORRECCIÓN 1: Mapear los endpoints de la API de Identity
+app.MapIdentityApi<MyUser>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -64,19 +58,16 @@ else
     app.UseSwaggerUI();
 }
 
-    
 app.UseHttpsRedirection();
 
 app.UseRouting();
 
+// CORRECCIÓN 2: Agregar UseAuthentication antes de UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
-
-
-
-
 
 app.Run();

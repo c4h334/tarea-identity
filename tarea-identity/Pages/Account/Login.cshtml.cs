@@ -1,5 +1,4 @@
 using tarea_identity.Pages.Account;
-using tarea_identity.Pages.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

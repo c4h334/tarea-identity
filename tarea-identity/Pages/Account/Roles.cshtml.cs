@@ -12,7 +12,9 @@ public class RolesModel : PageModel
     private readonly UserManager<MyUser> _userManager;
 
     [BindProperty]
-    public RolesDTO Rol { get; set; }
+    // CORRECCIÓN: Se le dice al compilador que asumiremos que el valor se inicializará
+    public RolesDTO Rol { get; set; } = default!;
+
     public RolesModel(
         RoleManager<MyRole> roleManager,
         UserManager<MyUser> userManager
@@ -21,24 +23,30 @@ public class RolesModel : PageModel
         _roleManager = roleManager;
         _userManager = userManager;
     }
+
     public async Task<ActionResult> OnGet()
     {
-        var MyRolees = await _roleManager.Roles.ToListAsync();
-        ViewData["roles"] = MyRolees;
+        var MyRoles = await _roleManager.Roles.ToListAsync();
+        ViewData["roles"] = MyRoles;
         return Page();
-    } 
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
         var newRol = new MyRole();
         newRol.Name = Rol.Name;
         newRol.FechaAlta = DateTime.Now;
         newRol.Seccion = Rol.Seccion;
-        
-        var res= await _roleManager.CreateAsync(newRol);
 
-        //Assign user in rol
+        var res = await _roleManager.CreateAsync(newRol);
+
+        // Validación para asegurar que el usuario existe antes de asignarle el rol
         var user = await _userManager.FindByEmailAsync("info@maurobernal.com.ar");
-        var rolassign= await _userManager.AddToRoleAsync(user, Rol.Name);
+
+        if (user != null)
+        {
+            var rolassign = await _userManager.AddToRoleAsync(user, Rol.Name);
+        }
 
         return RedirectPermanent("/account/roles");
     }
