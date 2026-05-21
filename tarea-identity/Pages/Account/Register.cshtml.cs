@@ -29,7 +29,8 @@ public class RegisterModel : PageModel
     {
         if (Register.Password != Register.Password2)
         {
-            throw new Exception("Passwords no coinciden");
+            ModelState.AddModelError(string.Empty, "Las contraseñas no coinciden.");
+            return Page();
         }
 
         var user = new MyUser();
@@ -37,15 +38,23 @@ public class RegisterModel : PageModel
         user.Email = Register.Email;
         user.UserName = Register.Email;
 
+        var res = await _userManager.CreateAsync(user, Register.Password);
 
-        var res = await _userManager
-            .CreateAsync(user, Register.Password);
-
-        if (ReturnUrl == null)
+        if (res.Succeeded)
         {
-            ReturnUrl = "/";
+            if (ReturnUrl == null)
+            {
+                ReturnUrl = "/";
+            }
+
+            return LocalRedirect(ReturnUrl);
         }
 
-        return LocalRedirect(ReturnUrl);
+        foreach (var error in res.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+
+        return Page();
     }
 }
