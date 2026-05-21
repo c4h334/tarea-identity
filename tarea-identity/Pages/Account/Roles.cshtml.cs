@@ -12,13 +12,9 @@ public class RolesModel : PageModel
     private readonly UserManager<MyUser> _userManager;
 
     [BindProperty]
-    // CORRECCIÓN: Se le dice al compilador que asumiremos que el valor se inicializará
     public RolesDTO Rol { get; set; } = default!;
 
-    public RolesModel(
-        RoleManager<MyRole> roleManager,
-        UserManager<MyUser> userManager
-        )
+    public RolesModel(RoleManager<MyRole> roleManager, UserManager<MyUser> userManager)
     {
         _roleManager = roleManager;
         _userManager = userManager;
@@ -26,28 +22,44 @@ public class RolesModel : PageModel
 
     public async Task<ActionResult> OnGet()
     {
-        var MyRoles = await _roleManager.Roles.ToListAsync();
-        ViewData["roles"] = MyRoles;
+        ViewData["roles"] = await _roleManager.Roles.ToListAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var newRol = new MyRole();
-        newRol.Name = Rol.Name;
-        newRol.FechaAlta = DateTime.Now;
-        newRol.Seccion = Rol.Seccion;
-
-        var res = await _roleManager.CreateAsync(newRol);
-
-        // Validación para asegurar que el usuario existe antes de asignarle el rol
-        var user = await _userManager.FindByEmailAsync("info@maurobernal.com.ar");
-
-        if (user != null)
+        if (!ModelState.IsValid)
         {
-            var rolassign = await _userManager.AddToRoleAsync(user, Rol.Name);
+            ViewData["roles"] = await _roleManager.Roles.ToListAsync();
+            return Page();
         }
 
-        return RedirectPermanent("/account/roles");
+        if (!string.IsNullOrWhiteSpace(Rol.Name))
+        {
+            var roleExist = await _roleManager.RoleExistsAsync(Rol.Name);
+
+            if (!roleExist)
+            {
+                var newRol = new MyRole
+                {
+                    Name = Rol.Name,
+                    FechaAlta = DateTime.Now,
+                    Seccion = Rol.Seccion
+                };
+
+                var res = await _roleManager.CreateAsync(newRol);
+
+                if (res.Succeeded)
+                {
+                    var user = await _userManager.FindByEmailAsync("info@maurobernal.com.ar");
+                    if (user != null)
+                    {
+                        await _userManager.AddToRoleAsync(user, Rol.Name);
+                    }
+                }
+            }
+        }
+
+        return RedirectToPage("/Account/Roles");
     }
 }
